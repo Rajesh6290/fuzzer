@@ -298,18 +298,42 @@ export function analyzeSSRF(
 // ─── Open Redirect ────────────────────────────────────────────────────────────
 export function analyzeOpenRedirect(
   responseHeaders: Record<string, string>,
-  statusCode: number
+  statusCode: number,
+  targetUrl?: string
 ): AnalysisResult {
   const isRedirect = statusCode >= 300 && statusCode < 400;
   const location = responseHeaders["location"] ?? responseHeaders["Location"] ?? "";
 
-  if (isRedirect && (location.includes("evil.com") || location.startsWith("javascript:") || location.startsWith("data:"))) {
+  if (!isRedirect || !location) return { ...NOT_VULNERABLE };
+
+  // Always flag javascript: and data: URIs
+  if (location.startsWith("javascript:") || location.startsWith("data:")) {
     return {
-      isVulnerable: true, severity: "medium", confidence: "high",
-      evidence: `Redirect to external URL. Location header: "${location}"`,
-      description: "Open Redirect detected. The application redirects to an attacker-controlled URL, enabling phishing.",
-      recommendation: "Validate redirect URLs against a strict allowlist. Use relative paths. Never redirect to URLs from user input.",
+      isVulnerable: true, severity: "high", confidence: "high",
+      evidence: `Redirect to dangerous scheme. Location header: "${location}".`,
+      description: "Open Redirect to javascript:/data: URI detected — can execute arbitrary scripts.",
+      recommendation: "Reject redirect targets with non-http/https schemes. Validate URLs strictly.",
     };
+  }
+
+  // Flag any absolute URL redirect to an external domain
+  if (/^https?:\/\//i.test(location)) {
+    let redirectHost = "";
+    let originHost = "";
+    try {
+      redirectHost = new URL(location).hostname;
+      if (targetUrl) originHost = new URL(targetUrl).hostname;
+    } catch { /* ignore */ }
+
+    const isExternal = redirectHost && redirectHost !== originHost;
+    if (isExternal) {
+      return {
+        isVulnerable: true, severity: "medium", confidence: "high",
+        evidence: `Redirect to external domain "${redirectHost}". Location header: "${location}".`,
+        description: "Open Redirect detected. The application redirects to an attacker-controlled URL, enabling phishing.",
+        recommendation: "Validate redirect URLs against a strict allowlist. Use relative paths. Never redirect to URLs from user input.",
+      };
+    }
   }
 
   return { ...NOT_VULNERABLE };
@@ -318,7 +342,15 @@ export function analyzeOpenRedirect(
 // ─── XXE ──────────────────────────────────────────────────────────────────────
 export function analyzeXXE(responseBody: string): AnalysisResult {
   const body = trunc(responseBody);
-  const xxeSignals = [/root:.*:0:0:/i, /\[boot loader\]/i, /<!DOCTYPE/i];
+  // Only match definitive XXE output — never <!DOCTYPE alone (present in every HTML page)
+  const xxeSignals = [
+    /root:.*:0:0:/i,          // /etc/passwd contents
+    /\[boot loader\]/i,        // Windows boot.ini
+    /\[operating systems\]/i,  // Windows boot.ini
+    /bin\/bash/i,              // /etc/shells or similar
+    /SYSTEM\s+"file:\/\//i,   // XXE entity declaration reflected back
+    /file:\/\/\/etc\//i,      // file:// path reflected in response
+  ];
 
   if (xxeSignals.some((p) => p.test(body))) {
     return {

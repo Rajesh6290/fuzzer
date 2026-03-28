@@ -15,6 +15,8 @@ import {
   MapPin,
   Wifi,
   BookOpen,
+  LogOut,
+  User2,
 } from "lucide-react";
 import { useState, useEffect } from "react";
 
@@ -39,18 +41,17 @@ export default function Sidebar() {
   const pathname = usePathname();
   const [collapsed, setCollapsed] = useState(false);
   const [ipInfo, setIpInfo] = useState<IpInfo | null>(null);
+  const [username, setUsername] = useState<string | null>(null);
 
   useEffect(() => {
-    fetch(
-      "http://ip-api.com/json/?fields=status,query,city,regionName,country,org,timezone",
-    )
+    fetch("https://ipinfo.io/json")
       .then((r) => r.json())
       .then((data) => {
-        if (data.status === "success") {
+        if (data.ip) {
           setIpInfo({
-            ip: data.query,
+            ip: data.ip,
             city: data.city,
-            region: data.regionName,
+            region: data.region,
             country: data.country,
             org: data.org,
             timezone: data.timezone,
@@ -61,6 +62,20 @@ export default function Sidebar() {
         /* silently ignore */
       });
   }, []);
+
+  useEffect(() => {
+    fetch("/api/auth/me")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => {
+        if (d?.username) setUsername(d.username);
+      })
+      .catch(() => {});
+  }, []);
+
+  const handleLogout = async () => {
+    await fetch("/api/auth/logout", { method: "POST" });
+    window.location.href = "/login";
+  };
 
   return (
     <motion.aside
@@ -137,9 +152,73 @@ export default function Sidebar() {
         })}
       </nav>
 
+      {/* User + Logout */}
+      <div
+        className="mx-2 mb-2 flex items-center gap-2 px-3 py-2.5 rounded-lg"
+        style={{
+          background: "var(--primary-50)",
+          border: "1px solid var(--border)",
+        }}
+      >
+        <div
+          className="w-7 h-7 rounded-full flex items-center justify-center shrink-0"
+          style={{ background: "var(--primary)", color: "#fff" }}
+        >
+          <User2 className="w-3.5 h-3.5" />
+        </div>
+
+        <AnimatePresence>
+          {!collapsed && (
+            <motion.span
+              initial={{ opacity: 0, width: 0 }}
+              animate={{ opacity: 1, width: "auto" }}
+              exit={{ opacity: 0, width: 0 }}
+              className="flex-1 min-w-0 overflow-hidden"
+            >
+              <span
+                className="block text-xs font-semibold truncate"
+                style={{ color: "var(--text-primary)" }}
+              >
+                {username ?? "…"}
+              </span>
+            </motion.span>
+          )}
+        </AnimatePresence>
+
+        <button
+          onClick={handleLogout}
+          title="Sign out"
+          className="shrink-0 w-6 h-6 flex items-center justify-center rounded transition-colors"
+          style={{ color: "var(--text-muted)" }}
+          onMouseEnter={(e) => (e.currentTarget.style.color = "var(--danger)")}
+          onMouseLeave={(e) =>
+            (e.currentTarget.style.color = "var(--text-muted)")
+          }
+        >
+          <LogOut className="w-3.5 h-3.5" />
+        </button>
+      </div>
+
       {/* IP Info / Status */}
-      <AnimatePresence>
-        {!collapsed && (
+      {collapsed ? (
+        /* Collapsed: just the green online dot */
+        <div className="flex justify-center mb-4">
+          <div
+            title="System Online"
+            className="w-8 h-8 rounded-lg flex items-center justify-center"
+            style={{
+              background: "var(--primary-50)",
+              border: "1px solid var(--border)",
+            }}
+          >
+            <Activity
+              className="w-3.5 h-3.5"
+              style={{ color: "var(--green)" }}
+            />
+          </div>
+        </div>
+      ) : (
+        <AnimatePresence>
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -202,8 +281,8 @@ export default function Sidebar() {
               </>
             )}
           </motion.div>
-        )}
-      </AnimatePresence>
+        </AnimatePresence>
+      )}
 
       {/* Collapse toggle */}
       <button

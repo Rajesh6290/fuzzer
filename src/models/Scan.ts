@@ -2,6 +2,7 @@ import mongoose, { Schema, Document, Model } from "mongoose";
 import type { ScanStatus, HttpMethod, AttackType } from "@/types";
 
 export interface IScan extends Document {
+  userId: string;
   name: string;
   targetUrl: string;
   method: HttpMethod;
@@ -34,6 +35,7 @@ export interface IScan extends Document {
 
 const ScanSchema = new Schema<IScan>(
   {
+    userId: { type: String, required: true, index: true },
     name: { type: String, required: true },
     targetUrl: { type: String, required: true },
     method: {

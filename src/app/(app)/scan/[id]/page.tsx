@@ -347,8 +347,8 @@ export default function ScanResultsPage({ params }: PageProps) {
       showCancelButton: true,
       confirmButtonText: "Stop Scan",
       cancelButtonText: "Continue",
-      background: "#080f1e",
-      color: "#e2e8f0",
+      background: "#ffffff",
+      color: "#1e293b",
       confirmButtonColor: "#dc2626",
       cancelButtonColor: "#374151",
       iconColor: "#f59e0b",
@@ -367,8 +367,8 @@ export default function ScanResultsPage({ params }: PageProps) {
         icon: "info",
         timer: 1500,
         showConfirmButton: false,
-        background: "#080f1e",
-        color: "#e2e8f0",
+        background: "#ffffff",
+        color: "#1e293b",
       });
       fetchScan();
     } catch (err: unknown) {
@@ -377,8 +377,8 @@ export default function ScanResultsPage({ params }: PageProps) {
         title: "Error",
         text: msg,
         icon: "error",
-        background: "#080f1e",
-        color: "#e2e8f0",
+        background: "#ffffff",
+        color: "#1e293b",
       });
     } finally {
       setStopping(false);
@@ -407,8 +407,8 @@ export default function ScanResultsPage({ params }: PageProps) {
       icon: "success",
       timer: 2000,
       showConfirmButton: false,
-      background: "#080f1e",
-      color: "#e2e8f0",
+      background: "#ffffff",
+      color: "#1e293b",
       iconColor: "#16a34a",
     });
   };

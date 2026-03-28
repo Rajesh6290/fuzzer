@@ -1,12 +1,16 @@
-import { NextRequest } from "next/server";
+import { NextRequest, after } from "next/server";
 import { connectDB } from "@/lib/db";
 import { Scan } from "@/models/Scan";
 import { runFuzzer } from "@/lib/fuzzer/engine";
+import { getSession } from "@/lib/session";
 import mongoose from "mongoose";
 
 type Ctx = { params: Promise<{ id: string }> };
 
 export async function POST(_req: NextRequest, { params }: Ctx) {
+  const session = await getSession();
+  if (!session) return Response.json({ error: "Unauthorized" }, { status: 401 });
+
   try {
     await connectDB();
     const { id } = await params;
@@ -15,7 +19,7 @@ export async function POST(_req: NextRequest, { params }: Ctx) {
       return Response.json({ error: "Invalid scan ID" }, { status: 400 });
     }
 
-    const scan = await Scan.findById(id);
+    const scan = await Scan.findOne({ _id: id, userId: session.userId });
     if (!scan) {
       return Response.json({ error: "Scan not found" }, { status: 404 });
     }
@@ -29,14 +33,18 @@ export async function POST(_req: NextRequest, { params }: Ctx) {
     }
     // stopped and failed are allowed — engine will resume from checkpoint
 
-    // Run fuzzer asynchronously so we can return 202 immediately
-    // The engine will update the DB as it progresses
-    runFuzzer(id).catch((err) => {
-      console.error(`[Fuzzer error for scan ${id}]:`, err);
-      Scan.findByIdAndUpdate(id, {
-        status: "failed",
-        logs: [`[${new Date().toISOString()}] Fatal error: ${String(err)}`],
-      }).catch(console.error);
+    // Schedule fuzzer to run after the response is sent.
+    // `after()` keeps the work alive on serverless runtimes (Vercel, etc.).
+    after(async () => {
+      try {
+        await runFuzzer(id);
+      } catch (err) {
+        console.error(`[Fuzzer error for scan ${id}]:`, err);
+        await Scan.findByIdAndUpdate(id, {
+          status: "failed",
+          $push: { logs: `[${new Date().toISOString()}] Fatal error: ${String(err)}` },
+        }).catch(console.error);
+      }
     });
 
     return Response.json({ message: "Scan started", scanId: id }, { status: 202 });

@@ -1,11 +1,15 @@
 import { NextRequest } from "next/server";
 import { connectDB } from "@/lib/db";
 import { Scan } from "@/models/Scan";
+import { getSession } from "@/lib/session";
 import mongoose from "mongoose";
 
 type Ctx = { params: Promise<{ id: string }> };
 
 export async function POST(_req: NextRequest, { params }: Ctx) {
+  const session = await getSession();
+  if (!session) return Response.json({ error: "Unauthorized" }, { status: 401 });
+
   try {
     await connectDB();
     const { id } = await params;
@@ -14,7 +18,7 @@ export async function POST(_req: NextRequest, { params }: Ctx) {
       return Response.json({ error: "Invalid scan ID" }, { status: 400 });
     }
 
-    const scan = await Scan.findById(id);
+    const scan = await Scan.findOne({ _id: id, userId: session.userId });
     if (!scan) {
       return Response.json({ error: "Scan not found" }, { status: 404 });
     }

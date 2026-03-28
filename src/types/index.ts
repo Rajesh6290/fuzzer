@@ -80,7 +80,6 @@ export interface ScanDoc {
     low: number;
     info: number;
   };
-  vulnerabilities?: VulnerabilityDoc[];
   startedAt: string | null;
   completedAt: string | null;
   createdAt: string;

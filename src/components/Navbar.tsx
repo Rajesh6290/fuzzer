@@ -13,9 +13,16 @@ interface NavbarProps {
 interface ScanAlert {
   id?: string;
   _id?: string;
-  target: string;
+  name: string;
+  targetUrl: string;
   status: string;
-  vulnerabilities: { severity: string }[];
+  findings?: {
+    critical: number;
+    high: number;
+    medium: number;
+    low: number;
+    info: number;
+  };
   createdAt: string;
 }
 
@@ -58,7 +65,12 @@ export default function Navbar({ title, subtitle }: NavbarProps) {
   }, [open]);
 
   const totalVulns = alerts.reduce(
-    (sum, s) => sum + (s.vulnerabilities?.length ?? 0),
+    (sum, s) =>
+      sum +
+      (s.findings?.critical ?? 0) +
+      (s.findings?.high ?? 0) +
+      (s.findings?.medium ?? 0) +
+      (s.findings?.low ?? 0),
     0,
   );
 
@@ -182,15 +194,13 @@ export default function Navbar({ title, subtitle }: NavbarProps) {
                     </div>
                   ) : (
                     alerts.map((scan) => {
-                      const vulnCount = scan.vulnerabilities?.length ?? 0;
-                      const critical =
-                        scan.vulnerabilities?.filter(
-                          (v) => v.severity === "critical",
-                        ).length ?? 0;
-                      const high =
-                        scan.vulnerabilities?.filter(
-                          (v) => v.severity === "high",
-                        ).length ?? 0;
+                      const vulnCount =
+                        (scan.findings?.critical ?? 0) +
+                        (scan.findings?.high ?? 0) +
+                        (scan.findings?.medium ?? 0) +
+                        (scan.findings?.low ?? 0);
+                      const critical = scan.findings?.critical ?? 0;
+                      const high = scan.findings?.high ?? 0;
                       return (
                         <Link
                           key={scan.id ?? scan._id}
@@ -238,7 +248,7 @@ export default function Navbar({ title, subtitle }: NavbarProps) {
                                 className="text-xs font-medium truncate"
                                 style={{ color: "var(--text-primary)" }}
                               >
-                                {scan.target}
+                                {scan.name}
                               </div>
                               <div
                                 className="text-xs mt-0.5"

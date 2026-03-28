@@ -83,6 +83,27 @@ const ATTACK_TYPES = [
     icon: Network,
     color: "#38bdf8",
   },
+  {
+    id: "ssti" as AttackType,
+    label: "SSTI",
+    desc: "Server-side template injection",
+    icon: Code2,
+    color: "#f97316",
+  },
+  {
+    id: "nosql" as AttackType,
+    label: "NoSQL Injection",
+    desc: "MongoDB / document store injection",
+    icon: Server,
+    color: "#22c55e",
+  },
+  {
+    id: "graphql" as AttackType,
+    label: "GraphQL Injection",
+    desc: "GraphQL query introspection & injection",
+    icon: Network,
+    color: "#e11d48",
+  },
 ];
 
 const STEPS = ["Target Config", "Attack Types", "Options", "Review & Start"];
@@ -693,8 +714,8 @@ export default function NewScanPage() {
         title: "Validation Error",
         text: err,
         icon: "warning",
-        background: "#080f1e",
-        color: "#e2e8f0",
+        background: "#ffffff",
+        color: "#1e293b",
         confirmButtonColor: "#6160b0",
         iconColor: "#f59e0b",
       });
@@ -706,14 +727,26 @@ export default function NewScanPage() {
   const prev = () => setStep((s) => Math.max(s - 1, 0));
 
   const submit = async () => {
+    if (form.attackTypes.length === 0) {
+      Swal.fire({
+        title: "Validation Error",
+        text: "Select at least one attack type before starting the scan.",
+        icon: "warning",
+        background: "#ffffff",
+        color: "#1e293b",
+        confirmButtonColor: "#6160b0",
+        iconColor: "#f59e0b",
+      });
+      return;
+    }
     const err = validateStep();
     if (err) {
       Swal.fire({
         title: "Error",
         text: err,
         icon: "error",
-        background: "#080f1e",
-        color: "#e2e8f0",
+        background: "#ffffff",
+        color: "#1e293b",
       });
       return;
     }
@@ -725,8 +758,8 @@ export default function NewScanPage() {
       showCancelButton: true,
       confirmButtonText: "Start Scanning",
       cancelButtonText: "Cancel",
-      background: "#080f1e",
-      color: "#e2e8f0",
+      background: "#ffffff",
+      color: "#1e293b",
       confirmButtonColor: "#6160b0",
       cancelButtonColor: "#374151",
       iconColor: "#6160b0",
@@ -766,8 +799,8 @@ export default function NewScanPage() {
         icon: "success",
         timer: 1500,
         showConfirmButton: false,
-        background: "#080f1e",
-        color: "#e2e8f0",
+        background: "#ffffff",
+        color: "#1e293b",
         iconColor: "#16a34a",
       });
       setTimeout(() => router.push(`/scan/${scanId}`), 1600);
@@ -777,8 +810,8 @@ export default function NewScanPage() {
         title: "Error",
         text: msg,
         icon: "error",
-        background: "#080f1e",
-        color: "#e2e8f0",
+        background: "#ffffff",
+        color: "#1e293b",
         confirmButtonColor: "#ff4b4b",
       });
     } finally {

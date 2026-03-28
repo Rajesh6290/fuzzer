@@ -9,6 +9,10 @@ import { NextRequest, NextResponse } from "next/server";
  * Watch your Next.js dev terminal to see the live console.log output.
  */
 export async function GET(req: NextRequest) {
+  if (process.env.NODE_ENV !== "development") {
+    return NextResponse.json({ error: "Not found" }, { status: 404 });
+  }
+
   const raw = req.nextUrl.searchParams.get("url");
 
   if (!raw) {

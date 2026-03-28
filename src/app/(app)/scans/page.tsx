@@ -63,8 +63,8 @@ export default function ScansPage() {
       showCancelButton: true,
       confirmButtonText: "Delete",
       cancelButtonText: "Cancel",
-      background: "#080f1e",
-      color: "#e2e8f0",
+      background: "#ffffff",
+      color: "#1e293b",
       confirmButtonColor: "#ff4b4b",
       cancelButtonColor: "#374151",
       iconColor: "#ff4b4b",
@@ -81,8 +81,8 @@ export default function ScansPage() {
         icon: "success",
         timer: 1500,
         showConfirmButton: false,
-        background: "#080f1e",
-        color: "#e2e8f0",
+        background: "#ffffff",
+        color: "#1e293b",
         iconColor: "#16a34a",
       });
       fetchScans();
@@ -92,8 +92,8 @@ export default function ScansPage() {
         title: "Error",
         text: msg,
         icon: "error",
-        background: "#080f1e",
-        color: "#e2e8f0",
+        background: "#ffffff",
+        color: "#1e293b",
       });
     }
   };

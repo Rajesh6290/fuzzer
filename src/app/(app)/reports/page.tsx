@@ -73,17 +73,17 @@ export default function ReportsPage() {
         icon: "success",
         timer: 1800,
         showConfirmButton: false,
-        background: "#080f1e",
-        color: "#e2e8f0",
-        iconColor: "#00ff9f",
+        background: "#ffffff",
+        color: "#1e293b",
+        iconColor: "#16a34a",
       });
     } catch {
       Swal.fire({
         title: "Error",
         text: "Failed to download report",
         icon: "error",
-        background: "#080f1e",
-        color: "#e2e8f0",
+        background: "#ffffff",
+        color: "#1e293b",
       });
     }
   };

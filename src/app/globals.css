@@ -85,6 +85,7 @@ html, body {
 @keyframes float         { 0%, 100% { transform: translateY(0px); } 50% { transform: translateY(-8px); } }
 @keyframes slide-up      { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
 @keyframes shimmer       { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
+@keyframes spin          { from { transform: translateY(-50%) rotate(0deg); } to { transform: translateY(-50%) rotate(360deg); } }
 
 /* ─── Grid background ─── */
 .cyber-grid {

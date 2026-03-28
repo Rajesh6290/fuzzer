@@ -1,10 +1,18 @@
+import { NextRequest } from "next/server";
 import { connectDB } from "@/lib/db";
 import { Scan } from "@/models/Scan";
 import { Vulnerability } from "@/models/Vulnerability";
+import { getSession } from "@/lib/session";
 
-export async function GET() {
+export async function GET(_req: NextRequest) {
+  const session = await getSession();
+  if (!session) return Response.json({ error: "Unauthorized" }, { status: 401 });
+
   try {
     await connectDB();
+
+    // Get scan IDs belonging to this user for vulnerability scoping
+    const userScanIds = await Scan.find({ userId: session.userId }).distinct("_id");
 
     const [
       totalScans,
@@ -15,21 +23,23 @@ export async function GET() {
       topVulnTypes,
       severityAgg,
     ] = await Promise.all([
-      Scan.countDocuments(),
-      Scan.countDocuments({ status: "completed" }),
-      Scan.countDocuments({ status: "running" }),
-      Vulnerability.countDocuments(),
-      Scan.find()
+      Scan.countDocuments({ userId: session.userId }),
+      Scan.countDocuments({ userId: session.userId, status: "completed" }),
+      Scan.countDocuments({ userId: session.userId, status: "running" }),
+      Vulnerability.countDocuments({ scanId: { $in: userScanIds } }),
+      Scan.find({ userId: session.userId })
         .sort({ createdAt: -1 })
         .limit(5)
         .lean(),
       Vulnerability.aggregate([
+        { $match: { scanId: { $in: userScanIds } } },
         { $group: { _id: "$type", count: { $sum: 1 } } },
         { $sort: { count: -1 } },
         { $limit: 8 },
         { $project: { type: "$_id", count: 1, _id: 0 } },
       ]),
       Vulnerability.aggregate([
+        { $match: { scanId: { $in: userScanIds } } },
         { $group: { _id: "$severity", count: { $sum: 1 } } },
       ]),
     ]);

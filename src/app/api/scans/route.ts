@@ -1,8 +1,12 @@
 import { NextRequest } from "next/server";
 import { connectDB } from "@/lib/db";
 import { Scan } from "@/models/Scan";
+import { getSession } from "@/lib/session";
 
 export async function GET(req: NextRequest) {
+  const session = await getSession();
+  if (!session) return Response.json({ error: "Unauthorized" }, { status: 401 });
+
   try {
     await connectDB();
     const { searchParams } = req.nextUrl;
@@ -10,7 +14,8 @@ export async function GET(req: NextRequest) {
     const limit = parseInt(searchParams.get("limit") ?? "20");
     const status = searchParams.get("status");
 
-    const query = status ? { status } : {};
+    const query: Record<string, unknown> = { userId: session.userId };
+    if (status) query.status = status;
     const skip = (page - 1) * limit;
 
     const [scans, total] = await Promise.all([
@@ -26,6 +31,9 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
+  const session = await getSession();
+  if (!session) return Response.json({ error: "Unauthorized" }, { status: 401 });
+
   try {
     await connectDB();
     const body = await req.json();
@@ -73,6 +81,7 @@ export async function POST(req: NextRequest) {
     const headersMap = new Map<string, string>(Object.entries(headers));
 
     const scan = new Scan({
+      userId: session.userId,
       name,
       targetUrl,
       method,

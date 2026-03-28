@@ -23,6 +23,7 @@ const CONCURRENCY = 5;        // parallel requests at a time
 const RETRY_ATTEMPTS = 2;     // retries on network error
 const RETRY_DELAY_MS = 400;   // wait between retries
 const STATUS_CHECK_EVERY = 10; // check DB stop signal every N requests
+const MAX_LOGS = 5000;          // max log lines to keep per scan (prevents 16MB doc limit)
 const SAVE_EVERY = 5;         // batch save every N completed requests
 const MAX_BODY_BYTES = 51_200; // truncate responses to 50KB for analysis
 const LOG_BUFFER_SIZE = 1;    // flush every log line for real-time display
@@ -37,6 +38,7 @@ interface FuzzRequest {
   payload: string;
   attackType: AttackType;
   timeout: number;
+  followRedirects?: boolean;
 }
 
 interface FuzzResponse {
@@ -58,7 +60,7 @@ async function sendRequest(req: FuzzRequest, attempt = 0): Promise<FuzzResponse>
       method: req.method,
       headers: req.headers,
       signal: controller.signal,
-      redirect: "manual",
+      redirect: req.followRedirects ? "follow" : "manual",
     };
 
     if (req.method !== "GET" && req.method !== "HEAD" && req.body) {
@@ -226,7 +228,8 @@ function analyzeResponse(
   payload: string,
   response: FuzzResponse,
   baselineTime: number,
-  baselineBody: string
+  baselineBody: string,
+  targetUrl?: string
 ): ReturnType<typeof analyzeSQLI> {
   // Response diffing: flag significant body length change (>30% diff from baseline)
   const baseLen = baselineBody.length || 1;
@@ -247,7 +250,7 @@ function analyzeResponse(
       case "ssrf":
         return analyzeSSRF(response.body, response.statusCode, payload);
       case "open_redirect":
-        return analyzeOpenRedirect(response.headers, response.statusCode);
+        return analyzeOpenRedirect(response.headers, response.statusCode, targetUrl);
       case "xxe":
         return analyzeXXE(response.body);
       case "ldap":
@@ -334,6 +337,7 @@ export async function runFuzzer(scanId: string): Promise<void> {
       url: targetUrl, method, headers: headersMap,
       body: scan.body || "", parameter: "baseline",
       payload: "", attackType: "sqli", timeout: scan.timeout,
+      followRedirects: scan.followRedirects,
     });
     baselineTime = baselineRes.responseTime;
     baselineBody = baselineRes.body;
@@ -357,18 +361,23 @@ export async function runFuzzer(scanId: string): Promise<void> {
   const vulnQueue: InstanceType<typeof Vulnerability>[] = [];
   let stopped = false;
 
-  // Periodic stop-signal checker (replaces per-iteration DB read)
+  // Periodic stop-signal checker — polls every 1 s to keep lag under ~1 s
   const stopCheckInterval = setInterval(async () => {
     try {
       const fresh = await Scan.findById(scanId).select("status").lean();
       if (fresh?.status === "stopped") stopped = true;
     } catch { /* ignore */ }
-  }, STATUS_CHECK_EVERY * 500);
+  }, 1000);
 
   // Flush buffer to DB
   async function flush(force = false) {
     if (logBuffer.length >= LOG_BUFFER_SIZE || force) {
-      scan!.logs.push(...logBuffer.splice(0));
+      const incoming = logBuffer.splice(0);
+      scan!.logs.push(...incoming);
+      // Cap log lines to prevent hitting MongoDB's 16 MB document limit
+      if (scan!.logs.length > MAX_LOGS) {
+        scan!.logs = scan!.logs.slice(-MAX_LOGS);
+      }
     }
     if (vulnQueue.length > 0) {
       await Vulnerability.insertMany(vulnQueue.splice(0));
@@ -403,11 +412,12 @@ export async function runFuzzer(scanId: string): Promise<void> {
           url: fuzzUrl, method, headers: fuzzHeaders, body: fuzzBody,
           parameter: job.point.name, payload: job.payload,
           attackType: job.attackType, timeout: scan.timeout,
+          followRedirects: scan.followRedirects,
         });
 
         completedRequests++;
 
-        const analysis = analyzeResponse(job.attackType, job.payload, response, baselineTime, baselineBody);
+        const analysis = analyzeResponse(job.attackType, job.payload, response, baselineTime, baselineBody, targetUrl);
 
         let urlPath = fuzzUrl;
         try { urlPath = new URL(fuzzUrl).pathname + new URL(fuzzUrl).search; } catch { /* keep full */ }
@@ -468,7 +478,9 @@ export async function runFuzzer(scanId: string): Promise<void> {
 
   scan.status = finalStatus;
   scan.progress = finalStatus === "completed" ? 100 : scan.progress;
-  scan.completedAt = new Date();
+  if (finalStatus === "completed") {
+    scan.completedAt = new Date();
+  }
   scan.findings = findings;
   scan.logs.push(
     `[${new Date().toISOString()}] Scan ${finalStatus}. Vulnerabilities: Critical=${findings.critical}, High=${findings.high}, Medium=${findings.medium}, Low=${findings.low}`
