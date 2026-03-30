@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { decrypt, COOKIE_NAME } from "@/lib/session";
 
 // Paths that don't require authentication
-const PUBLIC_PATHS = new Set(["/", "/login", "/signup"]);
+const PUBLIC_PATHS = new Set(["/", "/login", "/signup", "/docs"]);
 
 // API paths that are always public (auth endpoints themselves)
 const PUBLIC_API_PREFIXES = ["/api/auth/"];

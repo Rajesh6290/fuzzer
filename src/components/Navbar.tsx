@@ -2,7 +2,16 @@
 
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
-import { Bell, Plus, AlertTriangle, CheckCircle, Clock, X } from "lucide-react";
+import {
+  Bell,
+  Plus,
+  AlertTriangle,
+  CheckCircle,
+  Clock,
+  X,
+  User2,
+  LogOut,
+} from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 
 interface NavbarProps {
@@ -37,7 +46,22 @@ const SEV_COLOR: Record<string, string> = {
 export default function Navbar({ title, subtitle }: NavbarProps) {
   const [open, setOpen] = useState(false);
   const [alerts, setAlerts] = useState<ScanAlert[]>([]);
+  const [username, setUsername] = useState<string | null>(null);
   const panelRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    fetch("/api/auth/me")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => {
+        if (d?.username) setUsername(d.username);
+      })
+      .catch(() => {});
+  }, []);
+
+  const handleLogout = async () => {
+    await fetch("/api/auth/logout", { method: "POST" });
+    window.location.href = "/login";
+  };
 
   useEffect(() => {
     if (!open) return;
@@ -76,25 +100,25 @@ export default function Navbar({ title, subtitle }: NavbarProps) {
 
   return (
     <header
-      className="flex items-center justify-between px-6 py-2 shrink-0"
+      className="flex items-center justify-between px-3 md:px-6 py-2 shrink-0"
       style={{
         borderBottom: "1px solid var(--border)",
         background: "#ffffff",
       }}
     >
       {/* Title */}
-      <div>
+      <div className="min-w-0 flex-1 mr-3">
         <motion.h1
           initial={{ opacity: 0, y: -8 }}
           animate={{ opacity: 1, y: 0 }}
-          className="text-lg font-bold"
+          className="text-base md:text-lg font-bold truncate"
           style={{ color: "var(--text-primary)" }}
         >
           {title}
         </motion.h1>
         {subtitle && (
           <p
-            className="text-xs mt-0.5"
+            className="text-xs mt-0.5 truncate hidden sm:block"
             style={{ color: "var(--text-secondary)" }}
           >
             {subtitle}
@@ -103,13 +127,110 @@ export default function Navbar({ title, subtitle }: NavbarProps) {
       </div>
 
       {/* Actions */}
-      <div className="flex items-center gap-2" ref={panelRef}>
-        <Link href="/scan/new">
+      <div className="flex items-center gap-2 shrink-0" ref={panelRef}>
+        <Link href="/scan/new" className="hidden md:block">
           <button className="btn-primary text-sm py-2 px-4">
             <Plus className="w-4 h-4" />
             New Scan
           </button>
         </Link>
+
+        {/* User chip + Logout — full card on sm+, compact on mobile */}
+        {/* Mobile: just avatar + logout icon */}
+        <div className="flex sm:hidden items-center gap-1.5">
+          <div
+            className="w-7 h-7 rounded-full flex items-center justify-center shrink-0 text-xs font-black"
+            style={{
+              background:
+                "linear-gradient(135deg, var(--primary), var(--primary-dark, #4f4fa8))",
+              color: "#fff",
+              boxShadow: "0 1px 4px rgba(97,96,176,0.3)",
+            }}
+          >
+            {username ? (
+              username.charAt(0).toUpperCase()
+            ) : (
+              <User2 className="w-3.5 h-3.5" />
+            )}
+          </div>
+          <button
+            onClick={handleLogout}
+            className="w-7 h-7 flex items-center justify-center rounded-lg transition-all"
+            style={{
+              color: "var(--danger)",
+              background: "rgba(255,75,75,0.07)",
+              border: "1px solid rgba(255,75,75,0.2)",
+            }}
+            title="Logout"
+          >
+            <LogOut className="w-3.5 h-3.5" />
+          </button>
+        </div>
+
+        {/* Desktop: full profile card */}
+        <div
+          className="hidden sm:flex items-center gap-2.5 px-3 py-1.5 rounded-xl transition-all"
+          style={{
+            background: "var(--primary-50)",
+            border: "1px solid var(--primary-200)",
+            boxShadow: "0 1px 4px rgba(97,96,176,0.08)",
+          }}
+        >
+          {/* Avatar */}
+          <div
+            className="w-7 h-7 rounded-full flex items-center justify-center shrink-0 text-xs font-black"
+            style={{
+              background:
+                "linear-gradient(135deg, var(--primary), var(--primary-dark, #4f4fa8))",
+              color: "#fff",
+              boxShadow: "0 1px 4px rgba(97,96,176,0.3)",
+            }}
+          >
+            {username ? (
+              username.charAt(0).toUpperCase()
+            ) : (
+              <User2 className="w-3.5 h-3.5" />
+            )}
+          </div>
+
+          {/* Username */}
+          <div className="flex flex-col leading-none">
+            <span
+              className="text-xs font-bold max-w-28 truncate"
+              style={{ color: "var(--text-primary)" }}
+            >
+              {username ?? "…"}
+            </span>
+            <span
+              className="text-[10px]"
+              style={{ color: "var(--text-muted)" }}
+            >
+              Tester
+            </span>
+          </div>
+
+          {/* Divider */}
+          <div
+            className="w-px h-5 mx-0.5"
+            style={{ background: "var(--border)" }}
+          />
+
+          {/* Logout */}
+          <button
+            onClick={handleLogout}
+            className="flex items-center gap-1 text-xs font-semibold px-2 py-1 rounded-lg transition-all"
+            style={{ color: "var(--danger)", background: "transparent" }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = "rgba(255,75,75,0.10)";
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = "transparent";
+            }}
+          >
+            <LogOut className="w-3 h-3" />
+            Logout
+          </button>
+        </div>
 
         {/* Bell button */}
         <div className="relative">
@@ -141,7 +262,7 @@ export default function Navbar({ title, subtitle }: NavbarProps) {
                 transition={{ duration: 0.18, ease: "easeOut" }}
                 className="absolute right-0 top-11 z-50 rounded-xl overflow-hidden"
                 style={{
-                  width: 320,
+                  width: "min(320px, calc(100vw - 1.5rem))",
                   background: "#ffffff",
                   border: "1px solid var(--border)",
                   boxShadow: "0 8px 32px rgba(97,96,176,0.13)",

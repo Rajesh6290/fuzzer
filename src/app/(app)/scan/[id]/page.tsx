@@ -543,7 +543,7 @@ export default function ScanResultsPage({ params }: PageProps) {
           )}
 
           {/* Action buttons */}
-          <div className="flex gap-2 shrink-0">
+          <div className="flex flex-wrap gap-2 shrink-0 w-full sm:w-auto">
             {scan.status === "running" && (
               <button
                 className="btn-danger text-sm"
@@ -615,7 +615,7 @@ export default function ScanResultsPage({ params }: PageProps) {
 
         {/* Tabs */}
         <div
-          className="flex gap-1 mb-5 p-1 rounded-xl w-fit"
+          className="flex gap-1 mb-5 p-1 rounded-xl overflow-x-auto"
           style={{ background: "var(--bg-secondary)" }}
         >
           {TABS.map((tab) => {
@@ -627,7 +627,7 @@ export default function ScanResultsPage({ params }: PageProps) {
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className="relative flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all"
+                className="relative flex items-center gap-2 px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-medium transition-all whitespace-nowrap"
                 style={{
                   background: isActive ? "var(--bg-card)" : "transparent",
                   color: isActive ? "var(--cyan)" : "var(--text-secondary)",

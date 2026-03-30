@@ -36,7 +36,6 @@ export default function SignupPage() {
   const router = useRouter();
   const [showPw, setShowPw] = useState(false);
   const [pw, setPw] = useState("");
-  const [pending, setPending] = useState(false);
   const [username, setUsername] = useState("");
   const [usernameStatus, setUsernameStatus] = useState<
     "idle" | "checking" | "available" | "taken" | "invalid"
@@ -74,7 +73,7 @@ export default function SignupPage() {
 
   const score = pw.length > 0 ? strengthScore(pw) : 0;
 
-  const [state, formAction] = useActionState(
+  const [state, formAction, pending] = useActionState(
     async (_prev: FormState, formData: FormData): Promise<FormState> => {
       const username = formData.get("username") as string;
       const password = formData.get("password") as string;
@@ -88,7 +87,6 @@ export default function SignupPage() {
       if (password.length < 8)
         return { error: "Password must be at least 8 characters" };
 
-      setPending(true);
       try {
         const res = await fetch("/api/auth/signup", {
           method: "POST",
@@ -102,8 +100,6 @@ export default function SignupPage() {
         return undefined;
       } catch {
         return { error: "Network error. Please try again." };
-      } finally {
-        setPending(false);
       }
     },
     undefined,
@@ -111,7 +107,7 @@ export default function SignupPage() {
 
   return (
     <div
-      className="min-h-screen flex items-stretch"
+      className="min-h-dvh flex items-stretch"
       style={{
         background:
           "linear-gradient(135deg, #f0f0ff 0%, #f8f8ff 50%, #eef2ff 100%)",

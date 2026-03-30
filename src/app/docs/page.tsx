@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
 import {
   Bug,
@@ -20,9 +20,15 @@ import {
   Hash,
   Layers,
   CheckCircle2,
+  StopCircle,
+  Play,
+  Download,
+  RefreshCcw,
+  Shuffle,
+  Activity,
+  DatabaseZap,
 } from "lucide-react";
-import Navbar from "@/components/Navbar";
-import PageWrapper from "@/components/PageWrapper";
+import PublicNav from "@/components/PublicNav";
 
 const SECTIONS = [
   { id: "overview", label: "Overview" },
@@ -32,6 +38,9 @@ const SECTIONS = [
   { id: "options", label: "Scan Options" },
   { id: "results", label: "Reading Results" },
   { id: "activity-log", label: "Activity Log" },
+  { id: "detection", label: "How Detection Works" },
+  { id: "stop-resume", label: "Stop & Resume" },
+  { id: "reports", label: "Reports & Export" },
   { id: "targets", label: "Test Targets" },
 ];
 
@@ -49,7 +58,7 @@ function Section({
       id={id}
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
-      className="scroll-mt-6"
+      className="scroll-mt-20"
     >
       <h2
         className="text-lg font-bold mb-4 pb-2"
@@ -118,7 +127,7 @@ function Code({ children }: { children: React.ReactNode }) {
 function CodeBlock({ children }: { children: React.ReactNode }) {
   return (
     <pre
-      className="p-3 rounded-lg text-xs font-mono overflow-x-auto"
+      className="p-3 rounded-lg text-xs font-mono overflow-x-auto max-w-full w-full block whitespace-pre-wrap wrap-break-word"
       style={{
         background: "var(--bg-secondary)",
         border: "1px solid var(--border)",
@@ -176,7 +185,7 @@ function AttackCard({
       </div>
       <p className="text-xs">{desc}</p>
       <div
-        className="text-xs font-mono px-2 py-1 rounded"
+        className="text-xs font-mono px-2 py-1 rounded overflow-x-auto whitespace-pre-wrap break-all"
         style={{ background: "var(--bg-secondary)", color: "#c2410c" }}
       >
         {example}
@@ -187,6 +196,49 @@ function AttackCard({
 
 export default function DocsPage() {
   const [activeSection, setActiveSection] = useState("overview");
+  const observerRef = useRef<IntersectionObserver | null>(null);
+
+  useEffect(() => {
+    // Watch all section elements — whichever is most visible sets the active TOC item
+    const sectionEls = SECTIONS.map((s) =>
+      document.getElementById(s.id),
+    ).filter(Boolean) as HTMLElement[];
+
+    observerRef.current = new IntersectionObserver(
+      (entries) => {
+        // Find the entry with the highest intersection ratio that is intersecting
+        const visible = entries
+          .filter((e) => e.isIntersecting)
+          .sort((a, b) => b.intersectionRatio - a.intersectionRatio);
+        if (visible.length > 0) {
+          setActiveSection(visible[0].target.id);
+        }
+      },
+      {
+        // Trigger when a section enters the top 20% of the viewport
+        rootMargin: "-10% 0px -70% 0px",
+        threshold: [0, 0.1, 0.25, 0.5, 1],
+      },
+    );
+
+    sectionEls.forEach((el) => observerRef.current!.observe(el));
+
+    // When scrolled to the bottom, force-activate the last section
+    const onScroll = () => {
+      if (
+        window.innerHeight + window.scrollY >=
+        document.documentElement.scrollHeight - 40
+      ) {
+        setActiveSection(SECTIONS[SECTIONS.length - 1].id);
+      }
+    };
+    window.addEventListener("scroll", onScroll, { passive: true });
+
+    return () => {
+      observerRef.current?.disconnect();
+      window.removeEventListener("scroll", onScroll);
+    };
+  }, []);
 
   const scrollTo = (id: string) => {
     setActiveSection(id);
@@ -196,13 +248,41 @@ export default function DocsPage() {
   };
 
   return (
-    <>
-      <Navbar title="Documentation" subtitle="Complete guide to using FuzzX" />
-      <PageWrapper>
+    <div
+      className="min-h-dvh flex flex-col overflow-x-hidden"
+      style={{ background: "var(--bg-primary)", color: "var(--text-primary)" }}
+    >
+      {/* Public nav */}
+      <PublicNav activePage="docs" />
+
+      <div className="flex-1 p-3 sm:p-6">
+        {/* Mobile section jump nav */}
+        <div className="lg:hidden mb-4 overflow-x-auto">
+          <div className="flex gap-1.5 pb-1">
+            {SECTIONS.map((s) => (
+              <button
+                key={s.id}
+                onClick={() => scrollTo(s.id)}
+                className="text-xs px-3 py-1.5 rounded-full whitespace-nowrap font-medium transition-all shrink-0"
+                style={{
+                  background:
+                    activeSection === s.id
+                      ? "var(--primary)"
+                      : "var(--bg-secondary)",
+                  color:
+                    activeSection === s.id ? "#fff" : "var(--text-secondary)",
+                  border: "1px solid var(--border)",
+                }}
+              >
+                {s.label}
+              </button>
+            ))}
+          </div>
+        </div>
         <div className="flex gap-8 max-w-6xl mx-auto">
           {/* Sidebar TOC */}
           <aside className="hidden lg:block w-48 shrink-0">
-            <div className="sticky top-6 space-y-1">
+            <div className="sticky top-20 space-y-1">
               <div
                 className="text-xs font-bold uppercase tracking-wider mb-3"
                 style={{ color: "var(--text-muted)" }}
@@ -379,13 +459,13 @@ export default function DocsPage() {
                 ].map(({ field, req, desc }) => (
                   <div
                     key={field}
-                    className="flex gap-3 p-3 rounded-lg"
+                    className="flex gap-2 sm:gap-3 p-3 rounded-lg"
                     style={{
                       background: "var(--bg-secondary)",
                       border: "1px solid var(--border)",
                     }}
                   >
-                    <div className="shrink-0 w-36">
+                    <div className="shrink-0 w-24 sm:w-36">
                       <span
                         className="font-semibold text-xs"
                         style={{ color: "var(--text-primary)" }}
@@ -415,8 +495,8 @@ export default function DocsPage() {
                   icon={Bug}
                   color="#ff4b4b"
                   name="SQL Injection (SQLi)"
-                  desc="Detects error-based, boolean-based blind, and time-based blind SQL injection. Checks for DB error messages in response body and response time spikes."
-                  example="' OR 1=1-- / ' AND SLEEP(5)--"
+                  desc="Detects error-based (20+ DB error patterns), boolean-based blind (body-diff vs baseline), time-based blind (adaptive sleep threshold), and HTTP 500 responses on SQL payloads."
+                  example="' OR 1=1-- / ' AND SLEEP(5)-- / ' AND EXTRACTVALUE(1,CONCAT(0x7e,version()))--"
                 />
                 <AttackCard
                   icon={Code2}
@@ -436,8 +516,8 @@ export default function DocsPage() {
                   icon={Terminal}
                   color="#16a34a"
                   name="Command Injection"
-                  desc="Injects shell command separators and sleep commands to detect OS command execution. Uses time-based detection."
-                  example="; sleep 5 # / | whoami"
+                  desc="Two detection modes: output-based (checks response for uid=, ls output, Linux version, system user patterns) and time-based blind (adaptive sleep/ping threshold). Output-based has high confidence; time-based fires when no output is visible."
+                  example="; whoami / | id / $(id) / ; sleep 5"
                 />
                 <AttackCard
                   icon={Server}
@@ -450,8 +530,8 @@ export default function DocsPage() {
                   icon={Globe}
                   color="#8188d3"
                   name="Open Redirect"
-                  desc="Injects external URLs into redirect parameters and checks if the response location header points to the injected domain."
-                  example="https://evil.com"
+                  desc="Checks the Location response header on 3xx redirects. Flags external-domain redirects (medium), and javascript:/data: URI redirects (high) which can execute arbitrary scripts in some browsers."
+                  example="https://evil.com / javascript:alert(1) / //evil.com"
                 />
                 <AttackCard
                   icon={FileCode2}
@@ -464,29 +544,33 @@ export default function DocsPage() {
                   icon={Network}
                   color="#38bdf8"
                   name="LDAP Injection"
-                  desc="Injects LDAP special characters and filter bypass payloads into parameters used for directory lookups or authentication."
-                  example="*)(uid=*))(|(uid=*"
+                  desc="Two detection modes: data-based (response contains LDAP directory entries like uid=, cn=, dc= — high confidence) and error-based (LDAP error strings like javax.naming.ldap, ActiveDirectory in response — medium confidence)."
+                  example="*)(uid=*))(|(uid=* / admin)(&)"
                 />
                 <AttackCard
                   icon={Layers}
                   color="#a78bfa"
                   name="SSTI"
-                  desc="Server-Side Template Injection. Injects template expression syntax for Jinja2, Twig, FreeMarker, Pebble, and others."
-                  example="{{7*7}} / ${7*7} / <%= 7*7 %>"
+                  desc="Injects math probes ({{7*7}}, ${7*7}, <%= 7*7 %>, #{7*7}, *{7*7}, @(7*7)) and verifies if the result 49 or 7777777 appears in the response — confirming server-side evaluation. Also detects config/secret-key leaks via {{config}}."
+                  example={
+                    '{{7*7}} → 49 in response / {{config}} / ${"freemarker.template.utility.Execute"?new()("id")}'
+                  }
                 />
                 <AttackCard
                   icon={Hash}
                   color="#34d399"
                   name="NoSQL Injection"
-                  desc="Injects MongoDB operator payloads to bypass authentication or extract data from NoSQL databases."
-                  example='{"$ne": null} / [$gt]=&[$ne]=x'
+                  desc="Two detection modes: auth-bypass (response returns token/JWT/success on $ne/$gt/$regex operators — critical) and error-based (MongoError, Mongoose, BSON, ObjectId errors in response — high). Supports both JSON body operators and URL param variants."
+                  example='{"$ne": null} / {"$gt": ""} / [$regex]=.*'
                 />
                 <AttackCard
                   icon={Settings}
                   color="#fb923c"
                   name="GraphQL"
-                  desc="Sends introspection queries and type enumeration payloads to detect exposed GraphQL endpoints and schema leakage."
-                  example="{__schema{types{name}}}"
+                  desc="Two detection modes: introspection (response contains __schema + types keys — confirms full schema exposure) and injection/error-based (structured GraphQL errors with locations/path keys after SQLi-style payloads in resolver arguments)."
+                  example={
+                    '{__schema{types{name}}} / {user(id:"1 OR 1=1"){id name}}'
+                  }
                 />
               </div>
             </Section>
@@ -678,6 +762,330 @@ export default function DocsPage() {
               </div>
             </Section>
 
+            {/* How Detection Works */}
+            <Section id="detection" title="How Detection Works">
+              <p>
+                Understanding the engine internals helps you interpret results
+                accurately and tune scans for your target.
+              </p>
+              <div className="space-y-4 mt-4">
+                {/* Baseline */}
+                <div
+                  className="p-4 rounded-lg space-y-2"
+                  style={{
+                    background: "var(--bg-secondary)",
+                    border: "1px solid var(--border)",
+                  }}
+                >
+                  <div className="flex items-center gap-2">
+                    <Activity
+                      className="w-4 h-4"
+                      style={{ color: "#6160b0" }}
+                    />
+                    <span
+                      className="font-semibold text-sm"
+                      style={{ color: "var(--text-primary)" }}
+                    >
+                      Baseline Request
+                    </span>
+                  </div>
+                  <p className="text-xs">
+                    Before sending any payloads, FuzzX fires one clean request
+                    to the target and records the response time and body size.
+                    This baseline is used as the reference for all time-based
+                    and body-diff detections.
+                  </p>
+                </div>
+                {/* Payload Mutations */}
+                <div
+                  className="p-4 rounded-lg space-y-2"
+                  style={{
+                    background: "var(--bg-secondary)",
+                    border: "1px solid var(--border)",
+                  }}
+                >
+                  <div className="flex items-center gap-2">
+                    <Shuffle className="w-4 h-4" style={{ color: "#d97706" }} />
+                    <span
+                      className="font-semibold text-sm"
+                      style={{ color: "var(--text-primary)" }}
+                    >
+                      Payload Mutations
+                    </span>
+                  </div>
+                  <p className="text-xs mb-2">
+                    Each payload is automatically mutated into multiple variants
+                    to bypass WAFs and input filters:
+                  </p>
+                  <ul className="space-y-1">
+                    {[
+                      ["URL-encoded", "%27 OR 1%3D1--"],
+                      ["Double URL-encoded", "%2527 OR 1%253D1--"],
+                      ["Case variation (SQL keywords)", "SeLeCt * FrOm users"],
+                      [
+                        "Comment obfuscation (spaces → /**/)",
+                        "SELECT/**/1/**/FROM/**/users",
+                      ],
+                    ].map(([label, ex]) => (
+                      <li
+                        key={label}
+                        className="text-xs flex items-start gap-2"
+                      >
+                        <span
+                          className="mt-1 w-1 h-1 rounded-full shrink-0"
+                          style={{ background: "#d97706" }}
+                        />
+                        <span>
+                          <strong style={{ color: "var(--text-primary)" }}>
+                            {label}:
+                          </strong>{" "}
+                          <code
+                            className="font-mono"
+                            style={{ color: "var(--cyan)" }}
+                          >
+                            {ex}
+                          </code>
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+                {/* Injection Points */}
+                <div
+                  className="p-4 rounded-lg space-y-2"
+                  style={{
+                    background: "var(--bg-secondary)",
+                    border: "1px solid var(--border)",
+                  }}
+                >
+                  <div className="flex items-center gap-2">
+                    <DatabaseZap
+                      className="w-4 h-4"
+                      style={{ color: "#16a34a" }}
+                    />
+                    <span
+                      className="font-semibold text-sm"
+                      style={{ color: "var(--text-primary)" }}
+                    >
+                      Automatic Injection Point Detection
+                    </span>
+                  </div>
+                  <p className="text-xs mb-2">
+                    The engine discovers injection points automatically — you
+                    never need to specify them manually:
+                  </p>
+                  <ul className="space-y-1">
+                    {[
+                      "Query parameters from the URL (e.g. ?id=1&search=test)",
+                      "JSON body keys for POST/PUT requests",
+                      "Form-encoded body params (application/x-www-form-urlencoded)",
+                      "Headers: User-Agent and X-Forwarded-For are always tested",
+                      "No params detected? Falls back to probing common names: q, id, search, query, input, name, data, value, keyword, term",
+                    ].map((line) => (
+                      <li key={line} className="text-xs flex items-start gap-2">
+                        <span
+                          className="mt-1 w-1 h-1 rounded-full shrink-0"
+                          style={{ background: "#16a34a" }}
+                        />
+                        {line}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+                {/* Response Analysis */}
+                <div
+                  className="p-4 rounded-lg space-y-2"
+                  style={{
+                    background: "var(--bg-secondary)",
+                    border: "1px solid var(--border)",
+                  }}
+                >
+                  <div className="flex items-center gap-2">
+                    <BarChart2
+                      className="w-4 h-4"
+                      style={{ color: "#e879f9" }}
+                    />
+                    <span
+                      className="font-semibold text-sm"
+                      style={{ color: "var(--text-primary)" }}
+                    >
+                      Response Analysis & Confidence Boosting
+                    </span>
+                  </div>
+                  <ul className="space-y-1">
+                    {[
+                      "Time-based attacks use an adaptive threshold: max(2× baseline, baseline + 3 s, 4 s minimum) to avoid false positives on slow servers.",
+                      "Response body diffing: if the body length changes >30% compared to baseline, confidence is automatically boosted for any flagged finding.",
+                      "Responses larger than 50 KB are truncated before regex analysis to maintain performance.",
+                      "5 requests run concurrently (configurable internally) with up to 2 automatic retries on network errors.",
+                    ].map((line) => (
+                      <li key={line} className="text-xs flex items-start gap-2">
+                        <span
+                          className="mt-1 w-1 h-1 rounded-full shrink-0"
+                          style={{ background: "#e879f9" }}
+                        />
+                        {line}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+            </Section>
+
+            {/* Stop & Resume */}
+            <Section id="stop-resume" title="Stop & Resume">
+              <p>
+                Scans can be paused and resumed at any point without losing
+                progress.
+              </p>
+              <div className="space-y-4 mt-4">
+                <div className="grid sm:grid-cols-2 gap-4">
+                  <div
+                    className="p-4 rounded-lg space-y-2"
+                    style={{
+                      background: "var(--bg-secondary)",
+                      border: "1px solid var(--border)",
+                    }}
+                  >
+                    <div className="flex items-center gap-2">
+                      <StopCircle
+                        className="w-4 h-4"
+                        style={{ color: "#dc2626" }}
+                      />
+                      <span
+                        className="font-semibold text-sm"
+                        style={{ color: "var(--text-primary)" }}
+                      >
+                        Stopping a Scan
+                      </span>
+                    </div>
+                    <p className="text-xs">
+                      Click the <strong>Stop</strong> button in the scan detail
+                      page at any time. The engine finishes the current batch of
+                      requests (up to 5), saves progress, and sets the scan
+                      status to <code className="font-mono">stopped</code>. All
+                      findings discovered so far are preserved.
+                    </p>
+                  </div>
+                  <div
+                    className="p-4 rounded-lg space-y-2"
+                    style={{
+                      background: "var(--bg-secondary)",
+                      border: "1px solid var(--border)",
+                    }}
+                  >
+                    <div className="flex items-center gap-2">
+                      <Play className="w-4 h-4" style={{ color: "#16a34a" }} />
+                      <span
+                        className="font-semibold text-sm"
+                        style={{ color: "var(--text-primary)" }}
+                      >
+                        Resuming a Scan
+                      </span>
+                    </div>
+                    <p className="text-xs">
+                      On a <code className="font-mono">stopped</code> scan,
+                      click <strong>Resume</strong>. The engine rebuilds the
+                      full job list and skips all already-completed requests,
+                      picking up exactly where it left off. Existing findings
+                      and logs are carried forward.
+                    </p>
+                  </div>
+                </div>
+                <div
+                  className="flex items-start gap-2 p-3 rounded-lg"
+                  style={{
+                    background: "rgba(97,96,176,0.08)",
+                    border: "1px solid rgba(97,96,176,0.25)",
+                  }}
+                >
+                  <RefreshCcw
+                    className="w-4 h-4 shrink-0 mt-0.5"
+                    style={{ color: "#6160b0" }}
+                  />
+                  <p className="text-xs">
+                    Scan state is persisted in the database after every 5
+                    completed request batches (or immediately when a
+                    vulnerability is found), so progress is never lost even if
+                    the server restarts.
+                  </p>
+                </div>
+              </div>
+            </Section>
+
+            {/* Reports & Export */}
+            <Section id="reports" title="Reports & Export">
+              <p>
+                Every completed or stopped scan can be exported as a structured
+                JSON report from the{" "}
+                <strong style={{ color: "var(--text-primary)" }}>
+                  Reports
+                </strong>{" "}
+                page.
+              </p>
+              <div className="space-y-4 mt-4">
+                <div className="space-y-3">
+                  <Step n={1} title="Open Reports">
+                    Click <strong>Reports</strong> in the sidebar. The page
+                    lists all completed and stopped scans.
+                  </Step>
+                  <Step n={2} title="Download a report">
+                    Click the <strong>Download</strong> icon next to any scan. A
+                    JSON file is saved immediately — no server round-trip after
+                    the initial fetch.
+                  </Step>
+                  <Step n={3} title="Use the report">
+                    Import the JSON into your ticket tracker, SIEM, or share it
+                    with your team. The file structure is:
+                  </Step>
+                </div>
+                <CodeBlock>{`{
+  "reportType": "FuzzX Security Report",
+  "generatedAt": "2026-03-30T10:00:00.000Z",
+  "scan": { /* full scan config + status */ },
+  "summary": {
+    "totalVulnerabilities": 4,
+    "critical": 1,
+    "high": 1,
+    "medium": 2,
+    "low": 0
+  },
+  "vulnerabilities": [
+    {
+      "type": "SQL Injection",
+      "severity": "critical",
+      "confidence": "high",
+      "parameter": "id",
+      "payload": "' AND SLEEP(5)--",
+      "evidence": "Response time 5312ms vs baseline 88ms",
+      "recommendation": "Use parameterized queries..."
+    }
+  ]
+}`}</CodeBlock>
+                <div
+                  className="flex items-start gap-2 p-3 rounded-lg"
+                  style={{
+                    background: "rgba(22,163,74,0.06)",
+                    border: "1px solid rgba(22,163,74,0.2)",
+                  }}
+                >
+                  <Download
+                    className="w-4 h-4 shrink-0 mt-0.5"
+                    style={{ color: "#16a34a" }}
+                  />
+                  <p className="text-xs">
+                    Report filenames are automatically timestamped:{" "}
+                    <code
+                      className="font-mono"
+                      style={{ color: "var(--cyan)" }}
+                    >
+                      fuzzx-report-&#123;scan-name&#125;-&#123;timestamp&#125;.json
+                    </code>
+                  </p>
+                </div>
+              </div>
+            </Section>
+
             {/* Test Targets */}
             <Section id="targets" title="Test Targets (Safe to Scan)">
               <div
@@ -748,7 +1156,7 @@ export default function DocsPage() {
             </Section>
           </div>
         </div>
-      </PageWrapper>
-    </>
+      </div>
+    </div>
   );
 }

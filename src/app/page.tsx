@@ -9,8 +9,6 @@ import {
   BarChart3,
   Terminal,
   Lock,
-  ArrowRight,
-  ChevronRight,
   Activity,
   Bug,
   Eye,
@@ -22,8 +20,9 @@ import {
   Cpu,
   Network,
   Radio,
+  ChevronRight,
 } from "lucide-react";
-import Image from "next/image";
+import PublicNav from "@/components/PublicNav";
 
 const TERMINAL_LINES = [
   {
@@ -304,10 +303,11 @@ function TerminalDemo() {
       <div
         ref={scrollRef}
         style={{
-          height: 300,
+          height: 260,
           background: "#fafbfe",
           fontFamily: "var(--font-geist-mono), 'Courier New', monospace",
           overflowY: "auto",
+          overflowX: "hidden",
           scrollbarWidth: "none",
         }}
       >
@@ -323,7 +323,7 @@ function TerminalDemo() {
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
                   transition={{ duration: 0.35, ease: "easeOut" }}
-                  className="text-xs leading-5 whitespace-nowrap overflow-hidden text-ellipsis"
+                  className="text-xs leading-5 break-all"
                   style={{ color: line.color }}
                 >
                   {line.text}
@@ -382,35 +382,6 @@ function TerminalDemo() {
   );
 }
 
-function StatCard({
-  value,
-  label,
-  color,
-}: {
-  value: string;
-  label: string;
-  color: string;
-}) {
-  const ref = useRef(null);
-  const inView = useInView(ref, { once: true });
-  return (
-    <motion.div
-      ref={ref}
-      initial={{ opacity: 0, scale: 0.9 }}
-      animate={inView ? { opacity: 1, scale: 1 } : {}}
-      transition={{ duration: 0.5 }}
-      className="glass-card p-6 text-center"
-    >
-      <div className="text-3xl font-black mb-1" style={{ color }}>
-        {value}
-      </div>
-      <div className="text-sm" style={{ color: "var(--text-secondary)" }}>
-        {label}
-      </div>
-    </motion.div>
-  );
-}
-
 export default function LandingPage() {
   const featuresRef = useRef(null);
   const stepsRef = useRef(null);
@@ -422,41 +393,12 @@ export default function LandingPage() {
 
   return (
     <div
-      className="min-h-screen flex flex-col"
+      className="min-h-dvh flex flex-col overflow-x-hidden"
       style={{ background: "var(--bg-primary)", color: "var(--text-primary)" }}
     >
-      <nav
-        className="flex items-center justify-between px-8 py-4 sticky top-0 z-50"
-        style={{
-          background: "#ffffff",
-          backdropFilter: "none",
-          borderBottom: "1px solid var(--border)",
-          boxShadow: "0 1px 8px rgba(97,96,176,0.07)",
-        }}
-      >
-        <div className="flex items-center gap-3">
-          <Image src="/logo.svg" alt="FuzzX Logo" width={120} height={100} />
-        </div>
-        <div className="hidden md:flex items-center gap-8">
-          {["Features", "How It Works"].map((item) => (
-            <a
-              key={item}
-              href={"#" + item.toLowerCase().replace(/\s+/g, "-")}
-              className="text-sm transition-colors"
-              style={{ color: "var(--text-secondary)" }}
-            >
-              {item}
-            </a>
-          ))}
-        </div>
-        <Link href="/dashboard">
-          <button className="btn-primary text-sm py-2 px-5">
-            Launch App <ArrowRight className="w-4 h-4" />
-          </button>
-        </Link>
-      </nav>
+      <PublicNav activePage="home" />
 
-      <section className="relative flex-1 flex items-center overflow-hidden px-8 pb-10 min-h-screen">
+      <section className="relative flex-1 flex items-start lg:items-center overflow-x-hidden px-4 sm:px-8 pt-10 pb-16 lg:py-0 lg:pb-10 min-h-dvh">
         <div className="cyber-grid absolute inset-0 opacity-40" />
         <div
           className="absolute top-1/4 left-1/4 w-96 h-96 rounded-full blur-[120px] opacity-15 pointer-events-none"
@@ -466,7 +408,7 @@ export default function LandingPage() {
           className="absolute bottom-1/4 right-1/4 w-80 h-80 rounded-full blur-[100px] opacity-10 pointer-events-none"
           style={{ background: "var(--primary-800)" }}
         />
-        <div className="relative z-10 max-w-7xl mx-auto w-full grid lg:grid-cols-2 gap-16 items-center">
+        <div className="relative z-10 max-w-7xl mx-auto w-full grid lg:grid-cols-2 gap-8 lg:gap-16 items-center">
           <div>
             <motion.div
               initial={{ opacity: 0, y: -12 }}
@@ -485,7 +427,7 @@ export default function LandingPage() {
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.2 }}
-              className="text-5xl xl:text-6xl font-black leading-tight mb-6"
+              className="text-3xl sm:text-5xl xl:text-6xl font-black leading-tight mb-6"
             >
               Uncover{" "}
               <span className="text-gradient-cyan">Vulnerabilities</span>
@@ -553,7 +495,7 @@ export default function LandingPage() {
             initial={{ opacity: 0, x: 32 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: 0.35, duration: 0.6 }}
-            className="flex flex-col gap-3"
+            className="flex flex-col gap-3 w-full"
             style={{ animation: "float 4s ease-in-out infinite" }}
           >
             {/* live badge */}
@@ -611,14 +553,18 @@ export default function LandingPage() {
         </div>
       </section>
 
-      <section id="features" className="pb-10 px-8" ref={featuresRef}>
+      <section
+        id="features"
+        className="py-10 sm:py-16 px-4 sm:px-8"
+        ref={featuresRef}
+      >
         <div className="max-w-7xl mx-auto">
           <motion.div
             initial={{ opacity: 0, y: 16 }}
             animate={featuresInView ? { opacity: 1, y: 0 } : {}}
             className="text-center mb-14"
           >
-            <h2 className="text-4xl font-black mb-4">
+            <h2 className="text-2xl sm:text-4xl font-black mb-4">
               Comprehensive{" "}
               <span className="text-gradient-cyan">Attack Coverage</span>
             </h2>
@@ -630,7 +576,7 @@ export default function LandingPage() {
               generation and response analysis.
             </p>
           </motion.div>
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-5">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
             {FEATURES.map((f, i) => (
               <motion.div
                 key={f.title}
@@ -663,7 +609,7 @@ export default function LandingPage() {
 
       <section
         id="how-it-works"
-        className="py-20 px-8"
+        className="py-12 sm:py-20 px-4 sm:px-8"
         ref={stepsRef}
         style={{ borderTop: "1px solid var(--border)" }}
       >
@@ -673,7 +619,7 @@ export default function LandingPage() {
             animate={stepsInView ? { opacity: 1, y: 0 } : {}}
             className="text-center mb-14"
           >
-            <h2 className="text-4xl font-black mb-4">
+            <h2 className="text-2xl sm:text-4xl font-black mb-4">
               How <span className="text-gradient-green">FuzzX Works</span>
             </h2>
             <p
@@ -684,7 +630,7 @@ export default function LandingPage() {
               steps.
             </p>
           </motion.div>
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
             {STEPS.map((step, i) => (
               <motion.div
                 key={step.num}
@@ -716,7 +662,7 @@ export default function LandingPage() {
       </section>
 
       <section
-        className="py-20 px-8"
+        className="py-12 sm:py-20 px-4 sm:px-8"
         style={{ borderTop: "1px solid var(--border)" }}
       >
         <div className="max-w-3xl mx-auto text-center">
@@ -724,7 +670,7 @@ export default function LandingPage() {
             initial={{ opacity: 0, scale: 0.95 }}
             whileInView={{ opacity: 1, scale: 1 }}
             viewport={{ once: true }}
-            className="glass-card p-14 relative overflow-hidden"
+            className="glass-card p-6 sm:p-14 relative overflow-hidden"
           >
             <div
               className="absolute inset-0 opacity-10 pointer-events-none"
@@ -737,7 +683,7 @@ export default function LandingPage() {
               className="w-14 h-14 mx-auto mb-6"
               style={{ color: "var(--primary)" }}
             />
-            <h2 className="text-4xl font-black mb-4">
+            <h2 className="text-2xl sm:text-4xl font-black mb-4">
               Ready to{" "}
               <span className="text-gradient-cyan">Secure Your App?</span>
             </h2>
@@ -749,7 +695,7 @@ export default function LandingPage() {
               do the rest.
             </p>
             <Link href="/scan/new">
-              <button className="btn-primary text-lg py-4 px-10">
+              <button className="btn-primary text-base sm:text-lg py-3 sm:py-4 px-6 sm:px-10">
                 <ScanSearch className="w-5 h-5" />
                 Launch Your First Scan
               </button>
@@ -759,7 +705,7 @@ export default function LandingPage() {
       </section>
 
       <footer
-        className="py-8 px-8 text-center text-sm"
+        className="py-8 px-4 sm:px-8 text-center text-sm"
         style={{
           borderTop: "1px solid var(--border)",
           color: "var(--text-muted)",

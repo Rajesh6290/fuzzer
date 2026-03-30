@@ -29,6 +29,11 @@ import Navbar from "@/components/Navbar";
 import PageWrapper from "@/components/PageWrapper";
 import AnimatedCounter from "@/components/AnimatedCounter";
 import SeverityBadge from "@/components/SeverityBadge";
+import {
+  StatCardSkeleton,
+  RowSkeleton,
+  ChartSkeleton,
+} from "@/components/Skeleton";
 import type { StatsDoc, ScanDoc } from "@/types";
 
 const STATUS_CONFIG = {
@@ -65,16 +70,16 @@ function StatsCard({
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay }}
-      className="glass-card p-5 flex items-center gap-4"
+      className="glass-card p-3 sm:p-5 flex items-center gap-3"
     >
       <div
-        className="w-12 h-12 rounded-xl flex items-center justify-center shrink-0"
+        className="w-9 h-9 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center shrink-0"
         style={{ background: `${color}18`, border: `1px solid ${color}44` }}
       >
-        <Icon className="w-5 h-5" style={{ color }} />
+        <Icon className="w-4 h-4 sm:w-5 sm:h-5" style={{ color }} />
       </div>
       <div>
-        <div className="text-2xl font-black" style={{ color }}>
+        <div className="text-lg sm:text-2xl font-black" style={{ color }}>
           <AnimatedCounter value={value} />
         </div>
         <div
@@ -121,20 +126,37 @@ export default function DashboardPage() {
 
   if (loading) {
     return (
-      <div
-        className="flex-1 flex items-center justify-center"
-        style={{ background: "var(--bg-primary)" }}
-      >
-        <motion.div
-          animate={{ rotate: 360 }}
-          transition={{ repeat: Infinity, duration: 1, ease: "linear" }}
-          className="w-10 h-10 rounded-full border-2 border-t-transparent"
-          style={{
-            borderColor: "var(--border-glow)",
-            borderTopColor: "transparent",
-          }}
+      <>
+        <Navbar
+          title="Dashboard"
+          subtitle="Security overview and recent activity"
         />
-      </div>
+        <PageWrapper>
+          {/* Stats skeleton */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-3 mb-6">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <StatCardSkeleton key={i} />
+            ))}
+          </div>
+          <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+            <div className="xl:col-span-2 space-y-3">
+              <div className="glass-card p-5">
+                <div
+                  className="h-4 w-32 rounded animate-pulse mb-4"
+                  style={{ background: "var(--bg-secondary)" }}
+                />
+                {Array.from({ length: 5 }).map((_, i) => (
+                  <RowSkeleton key={i} lines={2} />
+                ))}
+              </div>
+            </div>
+            <div className="space-y-4">
+              <ChartSkeleton height={260} />
+              <ChartSkeleton height={220} />
+            </div>
+          </div>
+        </PageWrapper>
+      </>
     );
   }
 
@@ -146,7 +168,7 @@ export default function DashboardPage() {
       />
       <PageWrapper>
         {/* Stats row */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 xl:grid-cols-6 gap-4 mb-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-3 mb-6">
           <StatsCard
             label="Total Scans"
             value={stats?.totalScans ?? 0}
@@ -191,7 +213,7 @@ export default function DashboardPage() {
           />
         </div>
 
-        <div className="grid xl:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
           {/* Recent scans */}
           <div className="xl:col-span-2">
             <motion.div
@@ -240,32 +262,36 @@ export default function DashboardPage() {
                         initial={{ opacity: 0, x: -12 }}
                         animate={{ opacity: 1, x: 0 }}
                         transition={{ delay: 0.3 + i * 0.05 }}
-                        className="glass-card p-4 flex items-center gap-4"
+                        className="glass-card p-4 flex flex-col sm:flex-row sm:items-center gap-3"
                       >
-                        <div
-                          className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0"
-                          style={{
-                            background: `${cfg.color}18`,
-                            border: `1px solid ${cfg.color}44`,
-                          }}
-                        >
-                          <Icon
-                            className="w-4 h-4"
-                            style={{ color: cfg.color }}
-                          />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="font-semibold text-sm truncate">
-                            {scan.name}
-                          </div>
+                        {/* Top row: icon + name/url */}
+                        <div className="flex items-center gap-3 flex-1 min-w-0">
                           <div
-                            className="text-xs mt-0.5 truncate"
-                            style={{ color: "var(--text-secondary)" }}
+                            className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0"
+                            style={{
+                              background: `${cfg.color}18`,
+                              border: `1px solid ${cfg.color}44`,
+                            }}
                           >
-                            {scan.targetUrl}
+                            <Icon
+                              className="w-4 h-4"
+                              style={{ color: cfg.color }}
+                            />
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <div className="font-semibold text-sm truncate">
+                              {scan.name}
+                            </div>
+                            <div
+                              className="text-xs mt-0.5 truncate"
+                              style={{ color: "var(--text-secondary)" }}
+                            >
+                              {scan.targetUrl}
+                            </div>
                           </div>
                         </div>
-                        <div className="flex items-center gap-3 shrink-0">
+                        {/* Bottom row on mobile / right side on desktop */}
+                        <div className="flex items-center gap-2 shrink-0 ml-12 sm:ml-0">
                           {total > 0 &&
                             (() => {
                               const worst =

@@ -49,9 +49,8 @@ function LoginContent() {
   const sessionExpired = searchParams.get("reason") === "session_expired";
 
   const [showPw, setShowPw] = useState(false);
-  const [pending, setPending] = useState(false);
 
-  const [state, formAction] = useActionState(
+  const [state, formAction, pending] = useActionState(
     async (_prev: FormState, formData: FormData): Promise<FormState> => {
       const username = formData.get("username") as string;
       const password = formData.get("password") as string;
@@ -60,7 +59,6 @@ function LoginContent() {
         return { error: "Username and password are required" };
       }
 
-      setPending(true);
       try {
         const res = await fetch("/api/auth/login", {
           method: "POST",
@@ -76,8 +74,6 @@ function LoginContent() {
         return undefined;
       } catch {
         return { error: "Network error. Please try again." };
-      } finally {
-        setPending(false);
       }
     },
     undefined,
@@ -85,7 +81,7 @@ function LoginContent() {
 
   return (
     <div
-      className="min-h-screen flex items-stretch"
+      className="min-h-dvh flex items-stretch"
       style={{
         background:
           "linear-gradient(135deg, #f0f0ff 0%, #f8f8ff 50%, #eef2ff 100%)",
@@ -253,7 +249,7 @@ function LoginContent() {
                     autoComplete="username"
                     autoFocus
                     required
-                    placeholder="your_username"
+                    placeholder="your username"
                     style={{
                       width: "100%",
                       paddingTop: "0.65rem",

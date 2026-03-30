@@ -832,7 +832,7 @@ export default function NewScanPage() {
       <PageWrapper>
         <div className="max-w-2xl mx-auto">
           <StepIndicator current={step} />
-          <div className="glass-card p-7">
+          <div className="glass-card p-4 sm:p-7">
             <h2 className="text-lg font-bold mb-5">{STEPS[step]}</h2>
             <AnimatePresence mode="wait">
               <motion.div

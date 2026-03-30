@@ -18,6 +18,7 @@ import {
 import Navbar from "@/components/Navbar";
 import PageWrapper from "@/components/PageWrapper";
 import SeverityBadge from "@/components/SeverityBadge";
+import { StatCardSkeleton, RowSkeleton } from "@/components/Skeleton";
 import type { ScanDoc, VulnerabilityDoc } from "@/types";
 
 interface ReportScan extends ScanDoc {
@@ -111,7 +112,7 @@ export default function ReportsPage() {
       />
       <PageWrapper>
         {/* Summary stats */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6">
           {[
             {
               label: "Total Reports",
@@ -143,19 +144,22 @@ export default function ReportsPage() {
               initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: i * 0.08 }}
-              className="glass-card p-4 flex items-center gap-3"
+              className="glass-card p-3 sm:p-4 flex items-center gap-2 sm:gap-3"
             >
               <div
-                className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
+                className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center shrink-0"
                 style={{
                   background: `${color}18`,
                   border: `1px solid ${color}44`,
                 }}
               >
-                <Icon className="w-5 h-5" style={{ color }} />
+                <Icon className="w-4 h-4 sm:w-5 sm:h-5" style={{ color }} />
               </div>
               <div>
-                <div className="text-xl font-black" style={{ color }}>
+                <div
+                  className="text-lg sm:text-xl font-black"
+                  style={{ color }}
+                >
                   {value}
                 </div>
                 <div
@@ -170,16 +174,52 @@ export default function ReportsPage() {
         </div>
 
         {loading ? (
-          <div className="flex items-center justify-center py-20">
-            <motion.div
-              animate={{ rotate: 360 }}
-              transition={{ repeat: Infinity, duration: 1, ease: "linear" }}
-              className="w-8 h-8 rounded-full border-2 border-t-transparent"
-              style={{
-                borderColor: "var(--border-glow)",
-                borderTopColor: "transparent",
-              }}
-            />
+          <div className="space-y-4">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <div key={i} className="glass-card p-4 sm:p-6 space-y-3">
+                <div className="flex items-start gap-3">
+                  <div
+                    className="w-12 h-12 rounded-xl animate-pulse shrink-0"
+                    style={{ background: "var(--bg-secondary)" }}
+                  />
+                  <div className="flex-1 space-y-2">
+                    <div
+                      className="h-4 w-2/5 rounded animate-pulse"
+                      style={{ background: "var(--bg-secondary)" }}
+                    />
+                    <div
+                      className="h-3 w-3/5 rounded animate-pulse"
+                      style={{ background: "var(--bg-secondary)" }}
+                    />
+                    <div
+                      className="h-3 w-1/3 rounded animate-pulse"
+                      style={{ background: "var(--bg-secondary)" }}
+                    />
+                  </div>
+                </div>
+                <div className="flex justify-between items-center">
+                  <div className="flex gap-2">
+                    {Array.from({ length: 2 }).map((_, j) => (
+                      <div
+                        key={j}
+                        className="h-5 w-16 rounded animate-pulse"
+                        style={{ background: "var(--bg-secondary)" }}
+                      />
+                    ))}
+                  </div>
+                  <div className="flex gap-2">
+                    <div
+                      className="h-8 w-20 rounded-lg animate-pulse"
+                      style={{ background: "var(--bg-secondary)" }}
+                    />
+                    <div
+                      className="h-8 w-20 rounded-lg animate-pulse"
+                      style={{ background: "var(--bg-secondary)" }}
+                    />
+                  </div>
+                </div>
+              </div>
+            ))}
           </div>
         ) : scans.length === 0 ? (
           <div className="glass-card p-12 text-center">
@@ -226,12 +266,12 @@ export default function ReportsPage() {
                   initial={{ opacity: 0, y: 8 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: i * 0.04 }}
-                  className="glass-card p-6"
+                  className="glass-card p-4 sm:p-6"
                 >
-                  <div className="flex flex-wrap items-start gap-4">
-                    {/* Risk badge */}
+                  {/* Top row: icon + name/url/meta */}
+                  <div className="flex items-start gap-3 mb-3">
                     <div
-                      className="w-14 h-14 rounded-xl flex items-center justify-center shrink-0"
+                      className="w-12 h-12 sm:w-14 sm:h-14 rounded-xl flex items-center justify-center shrink-0"
                       style={{
                         background: `${riskColor}18`,
                         border: `1px solid ${riskColor}44`,
@@ -239,22 +279,24 @@ export default function ReportsPage() {
                     >
                       {riskLevel === "SAFE" ? (
                         <CheckCircle2
-                          className="w-6 h-6"
+                          className="w-5 h-5 sm:w-6 sm:h-6"
                           style={{ color: riskColor }}
                         />
                       ) : (
                         <Shield
-                          className="w-6 h-6"
+                          className="w-5 h-5 sm:w-6 sm:h-6"
                           style={{ color: riskColor }}
                         />
                       )}
                     </div>
 
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-3 mb-1">
-                        <h3 className="font-bold text-base">{scan.name}</h3>
+                      <div className="flex items-center gap-2 flex-wrap mb-1">
+                        <h3 className="font-bold text-sm sm:text-base truncate">
+                          {scan.name}
+                        </h3>
                         <span
-                          className="text-xs font-black px-2 py-0.5 rounded"
+                          className="text-xs font-black px-2 py-0.5 rounded shrink-0"
                           style={{
                             color: riskColor,
                             background: `${riskColor}18`,
@@ -271,7 +313,7 @@ export default function ReportsPage() {
                         {scan.targetUrl}
                       </div>
                       <div
-                        className="flex flex-wrap gap-3 text-xs"
+                        className="flex flex-wrap gap-2 sm:gap-3 text-xs"
                         style={{ color: "var(--text-muted)" }}
                       >
                         <span className="flex items-center gap-1">
@@ -287,38 +329,38 @@ export default function ReportsPage() {
                           {totalF} finding(s)
                         </span>
                       </div>
-
-                      {/* Severity pills */}
-                      {totalF > 0 && (
-                        <div className="flex flex-wrap gap-2 mt-3">
-                          {(["critical", "high", "medium", "low"] as const).map(
-                            (sev) =>
-                              (scan.findings?.[sev] ?? 0) > 0 ? (
-                                <span
-                                  key={sev}
-                                  className="text-xs px-2 py-0.5 rounded font-semibold capitalize"
-                                  style={{ background: `${riskColor}12` }}
-                                >
-                                  <SeverityBadge severity={sev} size="sm" />{" "}
-                                  &times;{scan.findings[sev]}
-                                </span>
-                              ) : null,
-                          )}
-                        </div>
-                      )}
                     </div>
+                  </div>
 
+                  {/* Bottom row: severity pills + action buttons */}
+                  <div className="flex items-center justify-between gap-2 flex-wrap">
+                    <div className="flex flex-wrap gap-2">
+                      {totalF > 0 &&
+                        (["critical", "high", "medium", "low"] as const).map(
+                          (sev) =>
+                            (scan.findings?.[sev] ?? 0) > 0 ? (
+                              <span
+                                key={sev}
+                                className="text-xs px-2 py-0.5 rounded font-semibold capitalize"
+                                style={{ background: `${riskColor}12` }}
+                              >
+                                <SeverityBadge severity={sev} size="sm" />{" "}
+                                &times;{scan.findings[sev]}
+                              </span>
+                            ) : null,
+                        )}
+                    </div>
                     <div className="flex items-center gap-2 shrink-0">
                       <Link href={`/scan/${scan._id}`}>
-                        <button className="btn-outline text-sm py-2 px-4">
-                          <ExternalLink className="w-4 h-4" /> Details
+                        <button className="btn-outline text-xs sm:text-sm py-1.5 sm:py-2 px-3 sm:px-4">
+                          <ExternalLink className="w-3.5 h-3.5" /> Details
                         </button>
                       </Link>
                       <button
-                        className="btn-primary text-sm py-2 px-4"
+                        className="btn-primary text-xs sm:text-sm py-1.5 sm:py-2 px-3 sm:px-4"
                         onClick={() => downloadReport(scan)}
                       >
-                        <Download className="w-4 h-4" /> Export
+                        <Download className="w-3.5 h-3.5" /> Export
                       </button>
                     </div>
                   </div>

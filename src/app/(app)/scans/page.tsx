@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import PageWrapper from "@/components/PageWrapper";
+import { RowSkeleton } from "@/components/Skeleton";
 import type { ScanDoc } from "@/types";
 
 const STATUS_CFG = {
@@ -109,8 +110,8 @@ export default function ScansPage() {
       <Navbar title="All Scans" subtitle={`${total} total scans`} />
       <PageWrapper>
         {/* Controls */}
-        <div className="flex flex-wrap items-center gap-3 mb-5">
-          <div className="flex-1 min-w-48 relative">
+        <div className="flex flex-col sm:flex-row sm:flex-wrap items-stretch sm:items-center gap-3 mb-5">
+          <div className="flex-1 min-w-0 relative">
             <Search
               className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2"
               style={{ color: "var(--text-muted)" }}
@@ -122,7 +123,7 @@ export default function ScansPage() {
               onChange={(e) => setSearch(e.target.value)}
             />
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5 flex-wrap">
             <Filter
               className="w-4 h-4"
               style={{ color: "var(--text-muted)" }}
@@ -155,16 +156,10 @@ export default function ScansPage() {
         </div>
 
         {loading ? (
-          <div className="flex items-center justify-center py-20">
-            <motion.div
-              animate={{ rotate: 360 }}
-              transition={{ repeat: Infinity, duration: 1, ease: "linear" }}
-              className="w-8 h-8 rounded-full border-2 border-t-transparent"
-              style={{
-                borderColor: "var(--border-glow)",
-                borderTopColor: "transparent",
-              }}
-            />
+          <div className="space-y-3">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <RowSkeleton key={i} lines={3} />
+            ))}
           </div>
         ) : filtered.length === 0 ? (
           <div className="glass-card p-12 text-center">
@@ -199,68 +194,75 @@ export default function ScansPage() {
                   initial={{ opacity: 0, y: 8 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: i * 0.03 }}
-                  className="glass-card p-4 flex items-center gap-4"
+                  className="glass-card p-4 flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4"
                 >
-                  <div
-                    className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
-                    style={{
-                      background: `${cfg.color}18`,
-                      border: `1px solid ${cfg.color}44`,
-                    }}
-                  >
-                    {scan.status === "running" ? (
-                      <motion.div
-                        animate={{ rotate: 360 }}
-                        transition={{
-                          repeat: Infinity,
-                          duration: 1.5,
-                          ease: "linear",
-                        }}
-                      >
+                  {/* Top row: icon + name/url/meta */}
+                  <div className="flex items-center gap-3 flex-1 min-w-0">
+                    <div
+                      className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
+                      style={{
+                        background: `${cfg.color}18`,
+                        border: `1px solid ${cfg.color}44`,
+                      }}
+                    >
+                      {scan.status === "running" ? (
+                        <motion.div
+                          animate={{ rotate: 360 }}
+                          transition={{
+                            repeat: Infinity,
+                            duration: 1.5,
+                            ease: "linear",
+                          }}
+                        >
+                          <Icon
+                            className="w-4 h-4"
+                            style={{ color: cfg.color }}
+                          />
+                        </motion.div>
+                      ) : (
                         <Icon
                           className="w-4 h-4"
                           style={{ color: cfg.color }}
                         />
-                      </motion.div>
-                    ) : (
-                      <Icon className="w-4 h-4" style={{ color: cfg.color }} />
-                    )}
+                      )}
+                    </div>
+
+                    <div className="flex-1 min-w-0">
+                      <div className="font-semibold text-sm truncate">
+                        {scan.name}
+                      </div>
+                      <div
+                        className="text-xs mt-0.5 truncate font-mono"
+                        style={{ color: "var(--text-secondary)" }}
+                      >
+                        {scan.targetUrl}
+                      </div>
+                      <div className="flex items-center gap-2 mt-1 flex-wrap">
+                        <span
+                          className="text-xs font-bold"
+                          style={{ color: cfg.color }}
+                        >
+                          {cfg.label}
+                        </span>
+                        <span
+                          className="text-xs"
+                          style={{ color: "var(--text-muted)" }}
+                        >
+                          {new Date(scan.createdAt).toLocaleDateString()}
+                        </span>
+                        <span
+                          className="hidden sm:inline text-xs"
+                          style={{ color: "var(--text-muted)" }}
+                        >
+                          {scan.attackTypes?.length ?? 0} attack type(s)
+                        </span>
+                      </div>
+                    </div>
                   </div>
 
-                  <div className="flex-1 min-w-0">
-                    <div className="font-semibold text-sm truncate">
-                      {scan.name}
-                    </div>
-                    <div
-                      className="text-xs mt-0.5 truncate font-mono"
-                      style={{ color: "var(--text-secondary)" }}
-                    >
-                      {scan.targetUrl}
-                    </div>
-                    <div className="flex items-center gap-3 mt-1">
-                      <span
-                        className="text-xs font-bold"
-                        style={{ color: cfg.color }}
-                      >
-                        {cfg.label}
-                      </span>
-                      <span
-                        className="text-xs"
-                        style={{ color: "var(--text-muted)" }}
-                      >
-                        {new Date(scan.createdAt).toLocaleDateString()}
-                      </span>
-                      <span
-                        className="text-xs"
-                        style={{ color: "var(--text-muted)" }}
-                      >
-                        {scan.attackTypes?.length ?? 0} attack type(s)
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Severity counts */}
-                  <div className="hidden sm:flex items-center gap-2 flex-shrink-0">
+                  {/* Bottom on mobile / right on desktop: severity + progress + actions */}
+                  <div className="flex items-center gap-2 shrink-0 flex-wrap">
+                    {/* Severity counts */}
                     {total > 0 ? (
                       <>
                         {scan.findings?.critical > 0 && (
@@ -281,33 +283,32 @@ export default function ScansPage() {
                       </>
                     ) : (
                       <span
-                        className="text-xs"
+                        className="hidden sm:inline text-xs"
                         style={{ color: "var(--text-muted)" }}
                       >
                         No findings
                       </span>
                     )}
-                  </div>
 
-                  {/* Progress */}
-                  {scan.status === "running" && (
-                    <div className="hidden md:block w-24 flex-shrink-0">
-                      <div
-                        className="text-xs text-right mb-1"
-                        style={{ color: "var(--cyan)" }}
-                      >
-                        {scan.progress}%
-                      </div>
-                      <div className="progress-bar">
+                    {/* Progress bar - desktop only */}
+                    {scan.status === "running" && (
+                      <div className="hidden md:block w-24 shrink-0">
                         <div
-                          className="progress-fill"
-                          style={{ width: `${scan.progress}%` }}
-                        />
+                          className="text-xs text-right mb-1"
+                          style={{ color: "var(--cyan)" }}
+                        >
+                          {scan.progress}%
+                        </div>
+                        <div className="progress-bar">
+                          <div
+                            className="progress-fill"
+                            style={{ width: `${scan.progress}%` }}
+                          />
+                        </div>
                       </div>
-                    </div>
-                  )}
+                    )}
 
-                  <div className="flex items-center gap-2 flex-shrink-0">
+                    {/* Actions */}
                     <Link href={`/scan/${scan._id}`}>
                       <button
                         className="text-xs px-3 py-1.5 rounded-lg flex items-center gap-1 transition-all"
