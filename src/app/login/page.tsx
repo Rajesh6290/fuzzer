@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useActionState, Suspense } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import Image from "next/image";
@@ -16,6 +16,7 @@ import {
   Bug,
   Activity,
 } from "lucide-react";
+import { useRouter } from "nextjs-toploader/app";
 
 type FormState = { error?: string } | undefined;
 
@@ -115,7 +116,8 @@ function LoginContent() {
           initial={{ opacity: 0, y: -16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
-          className="relative flex items-center gap-3"
+          className="relative flex cursor-pointer items-center gap-3"
+          onClick={() => router.push("/")}
         >
           <Image
             src="/logo.svg"

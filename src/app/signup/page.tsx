@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useActionState, useEffect, useRef } from "react";
-import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import Image from "next/image";
@@ -16,6 +15,7 @@ import {
   XCircle,
   ShieldCheck,
 } from "lucide-react";
+import { useRouter } from "nextjs-toploader/app";
 
 type FormState = { error?: string } | undefined;
 
@@ -44,11 +44,7 @@ export default function SignupPage() {
 
   useEffect(() => {
     if (debounceRef.current) clearTimeout(debounceRef.current);
-    if (username.length < 3) {
-      setUsernameStatus("idle");
-      return;
-    }
-    setUsernameStatus("checking");
+    if (username.length < 3) return;
     debounceRef.current = setTimeout(async () => {
       try {
         const res = await fetch(
@@ -115,7 +111,7 @@ export default function SignupPage() {
     >
       {/* ── Left branding panel ── */}
       <div
-        className="hidden lg:flex flex-col justify-between w-[480px] shrink-0 p-12 relative overflow-hidden"
+        className="hidden lg:flex flex-col justify-between w-120 shrink-0 p-12 relative overflow-hidden"
         style={{
           background:
             "linear-gradient(160deg, #6160b0 0%, #48488b 60%, #2d2c60 100%)",
@@ -141,7 +137,8 @@ export default function SignupPage() {
           initial={{ opacity: 0, y: -16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
-          className="relative flex items-center gap-3"
+          className="relative flex cursor-pointer items-center gap-3"
+          onClick={() => router.push("/")}
         >
           <Image
             src="/logo.svg"
@@ -286,7 +283,11 @@ export default function SignupPage() {
                     required
                     placeholder="your username"
                     value={username}
-                    onChange={(e) => setUsername(e.target.value)}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setUsername(val);
+                      setUsernameStatus(val.length < 3 ? "idle" : "checking");
+                    }}
                     style={{
                       width: "100%",
                       paddingTop: "0.65rem",
